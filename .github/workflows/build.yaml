@@ -71,9 +71,11 @@ jobs:
         # 核心修改：如果是安卓平台，显式指定只构建 apk
         run: |
           if [ "${{ matrix.platform }}" = "android" ]; then
-            dart setup.dart android --env stable --only-apk
+            # 这里的 out core 意味着只编译底层的 Go 核心库，不编译整包
+            # 如果你要整包 APK，直接用默认参数即可
+            dart setup.dart android --env stable
           else
-            dart setup.dart ${{ matrix.platform }} ${{ matrix.arch && format('--arch {0}', matrix.arch) }} --env stable
+            dart setup.dart ${{ matrix.platform }} --env stable
           fi
 
       - name: Upload
