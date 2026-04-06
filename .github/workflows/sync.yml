@@ -1,0 +1,32 @@
+name: Upstream Sync
+
+on:
+  workflow_dispatch: # 只保留手动触发，点击按钮才会运行
+
+jobs:
+  sync_latest_from_upstream:
+    runs-on: ubuntu-latest
+    # 给任务增加写入权限，否则无法推送回你的仓库
+    permissions:
+      contents: write
+      
+    steps:
+      - name: Checkout target repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          # 注意：如果是同步到自己的仓库，需要使用能够推送的权限
+          # 默认的 GITHUB_TOKEN 通常足够，但如果是同步到 master 保护分支可能需要 PAT
+
+      - name: Sync upstream changes
+        id: sync
+        uses: aieri/sync-upstream-repo@v1.1
+        with:
+          upstream_repo: "https://github.com/chen08209/FlClash.git"
+          upstream_branch: "main"
+          downstream_branch: "main"
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Sync Check
+        if: steps.sync.outputs.has_new_commits == 'true'
+        run: echo "代码已从主库更新，如有冲突请手动处理。"
