@@ -3,17 +3,10 @@ name: build
 on:
   workflow_dispatch:
     inputs:
-      build_android:
-        description: '是否构建 Android'
-        required: true
-        type: boolean
-        default: true
-      build_windows:
-        description: '是否构建 Windows'
-        required: true
-        type: boolean
-        default: true
-
+        version:
+          description: '发布版本号 (例如: 1.0.0)'
+          required: true
+          default: 'manual'
 env:
   IS_STABLE: true
 
@@ -198,7 +191,7 @@ jobs:
           sed "s|VERSION|$version|g" ./.github/release_template.md >> release.md
 
       - name: Generate sha256
-        if: env.IS_STABLE == 'true'
+        if: ${{ env.IS_STABLE == 'true' }}
         run: |
           cd ./dist
           for file in $(find . -type f -not -name "*.sha256"); do
