@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
         version:
-          description: '发布版本号 (例如: 1.0.0)'
+          description: '发布版本号 (1.0.1)'
           required: true
           default: 'manual'
 env:
@@ -45,7 +45,7 @@ jobs:
             core/go.sum
 
       - name: Setup Flutter
-        if: ${{ !(startsWith(matrix.os, 'windows-11-arm') || startsWith(matrix.os, 'ubuntu-24.04-arm')) }}
+        if: "!startsWith(matrix.os, 'windows-11-arm') && !startsWith(matrix.os, 'ubuntu-24.04-arm')"
         uses: subosito/flutter-action@v2
         with:
           channel: stable
@@ -66,6 +66,15 @@ jobs:
 
       - name: Setup
         run: dart setup.dart ${{ matrix.platform }} ${{ matrix.arch && format('--arch {0}', matrix.arch) }} ${{ env.IS_STABLE == 'true' && '--env stable' || '' }}
+
+      - name: Build
+        # 核心修改：如果是安卓平台，显式指定只构建 apk
+        run: |
+          if [ "${{ matrix.platform }}" = "android" ]; then
+            dart setup.dart android --env stable --only-apk
+          else
+            dart setup.dart ${{ matrix.platform }} ${{ matrix.arch && format('--arch {0}', matrix.arch) }} --env stable
+          fi
 
       - name: Upload
         uses: actions/upload-artifact@v4
@@ -203,6 +212,9 @@ jobs:
         with:
           files: ./dist/*
           body_path: './release.md'
+          # 手动触发时指定 tag 名，防止 release 失败
+          tag_name: "v${{ github.event.inputs.version }}"
+          name: "Release v${{ github.event.inputs.version }}"
 
       - name: Create Fdroid Source Dir
         if: ${{ env.IS_STABLE == 'true' }}
